@@ -1,19 +1,3 @@
-"""
-orders.py
----------
-Synthetic order generation for the warehouse simulation.
-
-No external dataset is used. Orders are generated on the fly using
-probability distributions:
-
-* Order ARRIVALS follow a Poisson process (classic model for the
-  number of independent, random events - e.g. customer orders -
-  arriving in a fixed time window).
-* Product, quantity, priority and processing time are drawn from
-  simple, explainable random variables (uniform / categorical /
-  triangular) so the behaviour is easy to explain in a viva.
-"""
-
 from __future__ import annotations
 
 import itertools
