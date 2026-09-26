@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Intelligent Warehouse RL - Dashboard</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- top navigation -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">WH</div>
+    <div>
+      <h1>Warehouse Control</h1>
+      <span class="subtitle">Reinforcement learning resource scheduler</span>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="dashboard">Dashboard</button>
+    <button class="tab-btn" data-view="training">Train &amp; Algorithms</button>
+    <button class="tab-btn" data-view="compare">Algorithm Comparison</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- dashboard view -->
+  <section id="view-dashboard" class="view active">
+
+    <div class="stats-strip" id="stats-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- simulation controls -->
+    <div class="controls-row panel">
+      <button class="btn primary" id="btn-start">Start</button>
+      <button class="btn" id="btn-pause">Pause</button>
+      <button class="btn danger" id="btn-reset">Reset</button>
+      <button class="btn" id="btn-generate">Generate orders</button>
+      <label class="field">Speed
+        <input type="range" id="speed-slider" min="0.5" max="10" step="0.5" value="2" />
+      </label>
+      <div class="status-strip">
+        <span><span class="status-dot" id="running-dot"></span><span id="running-label">Stopped</span></span>
+        <span>speed <span id="speed-label">2.0x</span></span>
+        <span id="active-algo-label">policy: rule-based heuristic</span>
+      </div>
+    </div>
+
+    <!-- warehouse and resource information -->
+    <div class="dashboard-grid">
+      <div>
+        <div class="panel hero">
+          <h2>Warehouse floor <span class="badge" id="sim-time-badge">t = 0</span></h2>
+          <div class="hero-frame">
+            <span class="corner tl"></span><span class="corner tr"></span>
+            <span class="corner bl"></span><span class="corner br"></span>
+            <canvas id="warehouse-canvas" width="900" height="440"></canvas>
+          </div>
+        </div>
+
+        <!-- RL performance charts -->
+        <div class="panel">
+          <h2>RL Analytics</h2>
+          <div class="charts-grid">
+            <div class="chart-box"><h3>Reward per Step</h3><canvas id="chart-reward"></canvas></div>
+            <div class="chart-box"><h3>Queue Length</h3><canvas id="chart-queue"></canvas></div>
+            <div class="chart-box"><h3>Average Waiting Time</h3><canvas id="chart-wait"></canvas></div>
+            <div class="chart-box"><h3>Throughput (orders/step)</h3><canvas id="chart-throughput"></canvas></div>
+            <div class="chart-box"><h3>Energy Usage (cumulative)</h3><canvas id="chart-energy"></canvas></div>
+            <div class="chart-box"><h3>Resource Utilization</h3><canvas id="chart-utilization"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- warehouse resources and orders -->
+      <div>
+        <div class="panel">
+          <h2>Robotic Arms</h2>
+          <div class="resource-list" id="arms-list"></div>
+        </div>
+        <div class="panel">
+          <h2>Ground Robots (AGV/AMR)</h2>
+          <div class="resource-list" id="robots-list"></div>
+        </div>
+        <div class="panel">
+          <h2>Aerial Drones</h2>
+          <div class="resource-list" id="drones-list"></div>
+        </div>
+        <div class="panel">
+          <h2>Order Queue</h2>
+          <table class="order-table" id="order-table">
+            <thead><tr><th>ID</th><th>Product</th><th>Priority</th><th>Stage</th><th>Wait</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- training view -->
+  <section id="view-training" class="view">
+    <div class="two-col">
+      <div class="panel">
+        <h2>Train an RL Algorithm</h2>
+        <div class="controls-row">
+          <label class="field">Algorithm
+            <select id="algo-select">
+              <optgroup label="Dynamic Programming">
+                <option value="policy_iteration">Policy Iteration</option>
+                <option value="value_iteration">Value Iteration</option>
+              </optgroup>
+              <optgroup label="Monte Carlo">
+                <option value="first_visit_mc">First-Visit MC</option>
+                <option value="every_visit_mc">Every-Visit MC</option>
+              </optgroup>
+              <optgroup label="Temporal Difference">
+                <option value="td_zero">TD(0)</option>
+                <option value="td_lambda">TD(lambda)</option>
+              </optgroup>
+              <option value="sarsa">SARSA</option>
+              <option value="q_learning" selected>Q-Learning</option>
+            </select>
+          </label>
+          <label class="field">Episodes
+            <input type="number" id="param-episodes" value="1500" min="10" max="20000" />
+          </label>
+          <label class="field">Alpha (learning rate)
+            <input type="number" id="param-alpha" value="0.1" step="0.01" min="0.01" max="1" />
+          </label>
+          <label class="field">Gamma (discount)
+            <input type="number" id="param-gamma" value="0.95" step="0.01" min="0.1" max="0.999" />
+          </label>
+          <label class="field">Epsilon start
+            <input type="number" id="param-epsilon" value="1.0" step="0.05" min="0" max="1" />
+          </label>
+          <label class="field">Epsilon decay
+            <input type="number" id="param-epsilon-decay" value="0.998" step="0.001" min="0.9" max="1" />
+          </label>
+        </div>
+        <div class="controls-row">
+          <button class="btn primary" id="btn-train">Start Training</button>
+          <span id="train-message" class="pill">Idle</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="train-progress" style="width:0%"></div></div>
+        <p style="color:var(--ink-dim); font-size:12.5px; margin-top:14px;">
+          Dynamic Programming methods first build an empirical model of the environment
+          by sampling transitions from every discretized state (see
+          <code>rl/utils.py:estimate_mdp_model</code>), then run Policy/Value Iteration on
+          that model. TD(0) and TD(lambda) evaluate the policy learned by a quick internal
+          Q-Learning run. Once training finishes, the resulting policy is automatically
+          loaded into the live dashboard simulation.
+        </p>
+      </div>
+
+      <!-- training history -->
+      <div class="panel">
+        <h2>Training History</h2>
+        <table class="compare-table" id="history-table">
+          <thead><tr><th>Algorithm</th><th>Episodes</th><th>Avg Reward</th><th>Duration</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Latest Training Reward Curve</h2>
+      <canvas id="chart-training-curve" style="width:100%; height:260px;"></canvas>
+    </div>
+  </section>
+
+  <!-- algorithm comparison view -->
+  <section id="view-compare" class="view">
+    <div class="panel">
+      <h2>Algorithm Comparison</h2>
+      <p style="color:var(--ink-dim); font-size:13px;">
+        "Avg Reward" and "Duration" are populated from REAL experimental runs
+        recorded in <code>database/warehouse.db</code> once you train each algorithm
+        from the "Train &amp; Algorithms" tab - not fabricated numbers.
+      </p>
+      <table class="compare-table" id="compare-table">
+        <thead>
+          <tr>
+            <th>Algorithm</th><th>Type</th><th>Model Required</th>
+            <th>Learning Style</th><th>On/Off Policy</th><th>Avg Reward</th><th>Duration</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- MDP information -->
+    <div class="panel">
+      <h2>MDP Formalization (S, A, P, R, gamma)</h2>
+      <div class="two-col">
+        <div>
+          <h3 style="color:var(--ink-dim);">State (discretized, 648 total states)</h3>
+          <ul style="font-size:13px; line-height:1.7;">
+            <li>Pending orders bucket (0,1,2,3+)</li>
+            <li>Busy robotic arms (0..2)</li>
+            <li>Busy ground robots (0..2)</li>
+            <li>Busy drones (0..2)</li>
+            <li>Average waiting time bucket (low/medium/high)</li>
+            <li>High priority order waiting (yes/no)</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="color:var(--ink-dim);">Actions (5 high-level decisions)</h3>
+          <ul style="font-size:13px; line-height:1.7;">
+            <li>Assign next order to an idle robotic arm</li>
+            <li>Assign a picked order to an idle ground robot</li>
+            <li>Send an idle drone to scan a zone</li>
+            <li>Prioritize the highest-priority queued order</li>
+            <li>No-op (conserve energy)</li>
+          </ul>
+        </div>
+      </div>
+      <p style="font-size:12.5px; color:var(--ink-dim);">
+        See <code>docs/RL_CONCEPTS.md</code> and <code>docs/ALGORITHMS.md</code> for the full
+        reward function, Bellman equations and algorithm-by-algorithm explanation.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- page footer -->
+<footer>
+  Academic reinforcement learning project. Orders are synthetic; no external dataset is used.
+</footer>
+
+<!-- load frontend scripts -->
+<script src="/js/visualization.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
