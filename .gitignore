@@ -1,0 +1,35 @@
+# virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# pytest cache
+.pytest_cache/
+
+# Python coverage
+.coverage
+htmlcov/
+
+# generated database files
+*.db
+*.sqlite
+*.sqlite3
+
+# experiment outputs
+experiments/results/
+
+# IDE files
+.vscode/
+.idea/
+
+# environment variables
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
