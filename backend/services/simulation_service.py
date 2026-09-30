@@ -182,7 +182,5 @@ class SimulationService:
             return d
 
 
-# Single shared instance used by the whole backend (simple, explicit singleton -
-# avoids the complexity of a full dependency-injection framework for this
-# academic project).
+
 simulation_service = SimulationService()
